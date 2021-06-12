@@ -10,14 +10,14 @@ alpha = st.sidebar.number_input(r"""""", value = 0.9, step=0.01,min_value = 0.0,
 #beta = st.sidebar.number_input(r"""""", value = 0.9, step=0.01,min_value = 0.0, max_value = 0.999)
 st.sidebar.markdown("""---""")
 st.sidebar.write("""$\epsilon$: Optimality tolerance.""")
-epsilon = st.sidebar.number_input(r"""""", value = 0.1, step=0.001, format="%f", min_value = 0.00001, help = r"""Stop the algorithm once **x**$^T$**w**$< \epsilon$.""")
+epsilon = st.sidebar.number_input(r"""""", value = 0.01, step=0.001, format="%f", min_value = 0.00001, help = r"""Stop the algorithm once **x**$^T$**w**$< \epsilon$.""")
 st.sidebar.markdown("""---""")
 st.sidebar.write("""$\gamma$: Duality gap parameter.""")
 gamma = st.sidebar.number_input(r"""""", value = 0.25, step=0.01, help = r"""The complimentary slackness parameter $\mu$ is multiplied by $\gamma$ each iteration such that $\mu \rightarrow 0$.""")
 #st.sidebar.markdown("""---""")
 st.title("Linear Interior Point Algorithm")
 st.header("By Abraham Holleran")
-matrix_input = st.text_area("Write your matrix with spaces separating the elements and a comma after each line.", value = "1 3 4 6, 5 3 2 1, 6 9 3 2")
+matrix_input = st.text_area("Write your matrix with spaces separating the elements and a comma after each row, i.e. \"1 3 4 6, 5 3 2 1, 6 9 3 2\"", value = "1 3 4 6, 5 3 2 1, 6 9 3 2")
 #matrix_input = "1 1, -1 1"
 #st.write("Example:")
 #st.write("1 3 4 6,")
@@ -30,15 +30,22 @@ if matrix_input:
         for j in range(len(matrix[i])):
             matrix[i][j] = float(matrix[i][j])
     matrix = np.array(matrix)
-x_i = [float(i) for i in st.text_input("Write a feasible x vector separated by spaces, i.e. \"4 3 1 9\"", value = "4 3 1 9").split(" ")]
-w_i = [float(i) for i in st.text_input("Write a w vector separated by spaces, i.e. \"5 3 2 4\"", value = "5 3 2 4").split(" ")]
-#x = [1, .5, .5, 1.5]
-#w = [.5, .5, 2, .5]
-b = np.array([float(i) for i in st.text_input("Write a b separated by spaces, i.e. \"2 1\"", value = "2 1").split(" ")])
-c = np.array([float(i) for i in st.text_input("Write a c separated by spaces, i.e. \"1 2 0 0\"", value = "1 2 0 0").split(" ")])
-y_i = [float(i) for i in st.text_input("Write a y separated by spaces, i.e. \"2 .5\"", value = "2 .5").split(" ")]
+col = st.beta_columns(5)
+col_help = 0
+with col[0]:
+    x_i = [float(i) for i in st.text_input("An x vector separated by spaces, i.e. \"4 3 1 9\"", value = "4 3 1 9").split(" ")]
+with col[1]:
+    w_i = [float(i) for i in st.text_input("A w vector separated by spaces, i.e. \"5 3 2 4\"", value = "5 3 2 4").split(" ")]
+with col[2]:
+    #x = [1, .5, .5, 1.5]
+    #w = [.5, .5, 2, .5]
+    b = np.array([float(i) for i in st.text_input("A b vector separated by spaces, i.e. \"2 1\"", value = "2 1").split(" ")])
+with col[3]:
+    c = np.array([float(i) for i in st.text_input("A c vector separated by spaces, i.e. \"1 2 0 0\"", value = "1 2 0 0").split(" ")])
+with col[4]:
+    y_i = [float(i) for i in st.text_input("A y vector separated by spaces, i.e. \"2 .5\"", value = "2 .5").split(" ")]
 
-if True:
+if st.checkbox("Follow along with Ex. 11.7", value=True):
     matrix = np.array([[1.5, 1], [1, 1], [0, 1]])
     x_i = [3, 3, 8.5, 6, 7]
     w_i = [1.0,2.0,2.0,2.0,1.0]
