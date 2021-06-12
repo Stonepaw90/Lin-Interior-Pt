@@ -4,16 +4,16 @@ import pandas as pd
 st.set_page_config(layout="wide")
 st.sidebar.header("Parameters")
 st.sidebar.write(r"""$\alpha$: Step size parameter.""")
-alpha = st.sidebar.number_input(r"""""", value = 0.9, step=0.01,min_value = 0.0, max_value = 0.999, help = r"""Each dual variable is reduced by no more than a factor of $1 - \alpha$.""")
+alpha = st.sidebar.number_input(r"""""", value = 0.9, step=0.01,min_value = 0.0, max_value = 0.999, help = r"""Ensures each variable is reduced by no more than a factor of $1 - \alpha$.""")
 #st.sidebar.markdown("""---""")
 #st.sidebar.write(r"$\beta$: **Backtracking multiplier**. If a constraint is violated, the step size is multiplied by $\beta$.")
 #beta = st.sidebar.number_input(r"""""", value = 0.9, step=0.01,min_value = 0.0, max_value = 0.999)
-#st.sidebar.markdown("""---""")
-st.sidebar.write("""$\epsilon$: **Optimality tolerance**. Stop the algorithm once $\lambda||d^x|| < \epsilon$.""")
-epsilon = st.sidebar.number_input(r"""""", value = 0.1, step=0.001, format="%f", min_value = 0.00001)
-#st.sidebar.markdown("""---""")
-st.sidebar.write("""$\gamma$: **Duality gap parameter**. The complimentary slackness constraint violation $\mu$ is multiplied by $\gamma$ each iteration.""")
-gamma = st.sidebar.number_input(r"""""", value = 0.25, step=0.01)
+st.sidebar.markdown("""---""")
+st.sidebar.write("""$\epsilon$: Optimality tolerance.""")
+epsilon = st.sidebar.number_input(r"""""", value = 0.1, step=0.001, format="%f", min_value = 0.00001, help = r"""Stop the algorithm once **x**$^T$**w**$< \epsilon$.""")
+st.sidebar.markdown("""---""")
+st.sidebar.write("""$\gamma$: Duality gap parameter.""")
+gamma = st.sidebar.number_input(r"""""", value = 0.25, step=0.01, help = r"""The complimentary slackness parameter $\mu$ is multiplied by $\gamma$ each iteration such that $\mu \rightarrow 0$.""")
 #st.sidebar.markdown("""---""")
 st.title("Linear Interior Point Algorithm")
 st.header("By Abraham Holleran")
@@ -53,7 +53,7 @@ y = np.array(y_i)
 f = x[:len(c)].dot(c)
 #y = np.array([2,.5])
 mu = gamma*np.dot(x,w)/len(x)
-st.write("mu=",mu)
+#st.write("mu=",mu)
 mu = 5
 matrix = np.concatenate((matrix, np.identity(len(y))), axis = 1)
 iter = 0
@@ -191,4 +191,5 @@ if st.button("Show all the matrixes please.") or True:
         w += betad * dw
         mu *= gamma
         iter += 1
+        st.write("""---""")
         assert iter <= len(df), "Too many iterations"
