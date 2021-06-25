@@ -30,20 +30,18 @@ if matrix_input:
         for j in range(len(matrix[i])):
             matrix[i][j] = float(matrix[i][j])
     matrix = np.array(matrix)
-col = st.beta_columns(5)
+col = st.beta_columns(2)
 col_help = 0
+with col[0]:
+    b = np.array([float(i) for i in st.text_input("A b vector separated by spaces, i.e. \"2 1\"", value = "2 1").split(" ")])
+with col[1]:
+    c = np.array([float(i) for i in st.text_input("A c vector separated by spaces, i.e. \"1 2 0 0\"", value = "1 2 0 0").split(" ")])
+
 with col[0]:
     x_i = [float(i) for i in st.text_input("An x vector separated by spaces, i.e. \"4 3 1 9\"", value = "4 3 1 9").split(" ")]
 with col[1]:
-    w_i = [float(i) for i in st.text_input("A w vector separated by spaces, i.e. \"5 3 2 4\"", value = "5 3 2 4").split(" ")]
-with col[2]:
-    #x = [1, .5, .5, 1.5]
-    #w = [.5, .5, 2, .5]
-    b = np.array([float(i) for i in st.text_input("A b vector separated by spaces, i.e. \"2 1\"", value = "2 1").split(" ")])
-with col[3]:
-    c = np.array([float(i) for i in st.text_input("A c vector separated by spaces, i.e. \"1 2 0 0\"", value = "1 2 0 0").split(" ")])
-with col[4]:
     y_i = [float(i) for i in st.text_input("A y vector separated by spaces, i.e. \"2 .5\"", value = "2 .5").split(" ")]
+
 
 if st.checkbox("Follow along with Ex. 11.7", value=True):
     matrix = np.array([[1.5, 1], [1, 1], [0, 1]])
@@ -52,11 +50,12 @@ if st.checkbox("Follow along with Ex. 11.7", value=True):
     b = np.array([16,12,10])
     c = np.array([4,3])
     y_i = [2.0, 2.0, 1.0]
-
 #s = b - matrix.dot(x_i[:len(c)])
 x = np.array(x_i)
-w = np.array(w_i)
 y = np.array(y_i)
+#w_i = matrix.T.dot(y) - c
+#st.write(w_i)
+w = np.array(w_i)
 f = x[:len(c)].dot(c)
 #y = np.array([2,.5])
 mu = gamma*np.dot(x,w)/len(x)
