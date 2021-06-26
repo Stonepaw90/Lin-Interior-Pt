@@ -1,13 +1,17 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
+
+
+from st_aggrid import AgGrid, DataReturnMode, GridUpdateMode, GridOptionsBuilder
 st.set_page_config(layout="wide")
+
+
+variable_dict = {"ex 11.7":False, "advanced":False, "update 11.26":False}
+
 st.sidebar.header("Parameters")
 st.sidebar.write(r"""$\alpha$: Step size parameter.""")
 alpha = st.sidebar.number_input(r"""""", value = 0.9, step=0.01,min_value = 0.0, max_value = 0.999, help = r"""Ensures each variable is reduced by no more than a factor of $1 - \alpha$.""")
-#st.sidebar.markdown("""---""")
-#st.sidebar.write(r"$\beta$: **Backtracking multiplier**. If a constraint is violated, the step size is multiplied by $\beta$.")
-#beta = st.sidebar.number_input(r"""""", value = 0.9, step=0.01,min_value = 0.0, max_value = 0.999)
 st.sidebar.markdown("""---""")
 st.sidebar.write("""$\epsilon$: Optimality tolerance.""")
 epsilon = st.sidebar.number_input(r"""""", value = 0.01, step=0.001, format="%f", min_value = 0.00001, help = r"""Stop the algorithm once **x**$^T$**w**$< \epsilon$.""")
@@ -15,36 +19,80 @@ st.sidebar.markdown("""---""")
 st.sidebar.write("""$\gamma$: Duality gap parameter.""")
 gamma = st.sidebar.number_input(r"""""", value = 0.25, step=0.01, help = r"""The complimentary slackness parameter $\mu$ is multiplied by $\gamma$ each iteration such that $\mu \rightarrow 0$.""")
 #st.sidebar.markdown("""---""")
-st.title("Linear Interior Point Algorithm")
-st.header("By Abraham Holleran")
-matrix_input = st.text_area("Write your matrix with spaces separating the elements and a comma after each row, i.e. \"1 3 4 6, 5 3 2 1, 6 9 3 2\"", value = "1 3 4 6, 5 3 2 1, 6 9 3 2")
-#matrix_input = "1 1, -1 1"
-#st.write("Example:")
-#st.write("1 3 4 6,")
-#st.write("5 3 2 1,")
-#st.write("6 9 3 2")
-if matrix_input:
-    matrix= [i.split(" ") for i in matrix_input.split(", ")]
-    #st.write(matrix)
-    for i in range(len(matrix)):
-        for j in range(len(matrix[i])):
-            matrix[i][j] = float(matrix[i][j])
-    matrix = np.array(matrix)
+st.title("Primal-dual Interior Point Algorithm for Linear Programs")
+st.write("Use this website to solve problems with the Primal-dual Interior Point Algorithm for Linear Programs from [Section 11.3](https://www.wiley.com/go/veatch/convexandlinearoptimization).")
+#variable_dict["advanced"] = st.sidebar.checkbox("Advanced output", value = False)
+st.sidebar.markdown('''
+#### Coded by [Abraham Holleran](https://github.com/Stonepaw90) :sunglasses:
+''')
+variable_dict["ex 11.7"] = st.checkbox("Follow along with Example. 11.7", value=True)
+#c1, c2 = st.beta_columns(2)
+#with c2:
+#    n_s = st.number_input("How many rows in your standard form A matrix?", value = 3)
+#with c1:
+#    m_s = st.number_input("How many columns in your standard form A matrix?", value = 4)
+    #st.sidebar.number_input("Grid height", min_value=200, max_value=800, value=200)
+
+
+if not variable_dict["ex 11.7"]:
+    input_dataframe = pd.DataFrame('', index=range(10), columns=["C" + str(i) for i in range(10)])
+    grid_height = 335
+    st.write("Write your matrix A in standard form in the top-left of this entry grid.")
+    c1, c2 = st.beta_columns(2)
+    with c1:
+        response = AgGrid(
+            input_dataframe,
+            height=grid_height,
+            width='100%',
+            editable=True,
+            sortable=False,
+            filter=False,
+            resizable=True,
+            defaultWidth=10,
+            fit_columns_on_grid_load=False,
+            key='input_frame')
+    response['data'] = response['data'].replace("nan", "")
+    n_s = len([i for i in response['data'].loc[1] if i])
+    m_s = len([i for i in response['data']["C0"] if i])
+    coln = ["C" + str(i) for i in range(m_s)]
+    rown = [str(i) for i in range(n_s)]
+    new_df = response['data'].loc[0:(m_s-1)].iloc[:,0:(n_s)].dropna()
+
+if variable_dict["ex 11.7"]:
+    matrix_small = np.array([[1.5, 1], [1, 1], [0, 1]])
+    m_s = 3
+    n_s = 2
+else:
+    matrix_small = np.array(new_df)
+st.write("Your matrix is",matrix_small)
+#if st.button("Is your matrix incorrect? Click to enter manually."):
+#    matrix_input = st.text_area("Write your matrix with spaces separating the elements and a comma after each row, i.e. \"1 3 4 6, 5 3 2 1, 6 9 3 2\"", value = "1 3 4 6, 5 3 2 1, 6 9 3 2")
+#    if matrix_input:
+#        matrix= [i.split(" ") for i in matrix_input.split(", ")]
+#        #st.write(matrix)
+#        for i in range(len(matrix)):
+#            for j in range(len(matrix[i])):
+#               matrix[i][j] = float(matrix[i][j])
+#        matrix = np.array(matrix)
+#        st.write("Your manually constructed matrix is:" ,matrix)
+#else:
+st.header("Input your problem data")
 col = st.beta_columns(2)
 col_help = 0
 with col[0]:
     b = np.array([float(i) for i in st.text_input("A b vector separated by spaces, i.e. \"2 1\"", value = "2 1").split(" ")])
 with col[1]:
     c = np.array([float(i) for i in st.text_input("A c vector separated by spaces, i.e. \"1 2 0 0\"", value = "1 2 0 0").split(" ")])
-
+st.header("Input your initial variables")
+col = st.beta_columns(2)
 with col[0]:
     x_i = [float(i) for i in st.text_input("An x vector separated by spaces, i.e. \"4 3 1 9\"", value = "4 3 1 9").split(" ")]
 with col[1]:
     y_i = [float(i) for i in st.text_input("A y vector separated by spaces, i.e. \"2 .5\"", value = "2 .5").split(" ")]
 
 
-if st.checkbox("Follow along with Ex. 11.7", value=True):
-    matrix = np.array([[1.5, 1], [1, 1], [0, 1]])
+
+if variable_dict["ex 11.7"]:
     x_i = [3, 3, 8.5, 6, 7]
     w_i = [1.0,2.0,2.0,2.0,1.0]
     b = np.array([16,12,10])
@@ -53,24 +101,27 @@ if st.checkbox("Follow along with Ex. 11.7", value=True):
 #s = b - matrix.dot(x_i[:len(c)])
 x = np.array(x_i)
 y = np.array(y_i)
-#w_i = matrix.T.dot(y) - c
-#st.write(w_i)
+c = np.array(c)
+matrix = np.concatenate((matrix_small, np.identity(len(y))), axis = 1)
+c_1 = np.concatenate([c, np.zeros(m_s)])
+w_i = list(matrix.T.dot(y)-c_1)
 w = np.array(w_i)
-f = x[:len(c)].dot(c)
+f= x[:n_s].dot(c[:n_s])
 #y = np.array([2,.5])
-mu = gamma*np.dot(x,w)/len(x)
+if variable_dict["update 11.26"]:
+    mu = gamma*np.dot(x,w)/len(x)
 #st.write("mu=",mu)
-mu = 5
-matrix = np.concatenate((matrix, np.identity(len(y))), axis = 1)
+elif variable_dict["ex 11.7"]:
+    mu = 5
+else:
+    mu = st.number_input("mu", value = 5)
 iter = 0
 data = []
-data.append([iter, tuple(x), tuple(y), tuple(w), "-", "-", "-", f, mu, x.dot(w)])
-#st.write(len(data))
-#data = 7*[1]
-alist = ["k", "x", "y", "w", "dx", "dy", "dw", "f(x)", "mu", "x^Tw"]
 def round_list(list, make_tuple = False):
     for i in range(len(list)):
-        if type(list[i]) is list or type(list[i]) is np.ndarray:
+        if type(list[i]) is str or type(list[i]) is tuple:
+            pass
+        elif type(list[i]) is list or type(list[i]) is np.ndarray:
             try:
                 for j in range(len(list[i])):
                     list[i][j] = round(list[i][j], 3)
@@ -81,6 +132,29 @@ def round_list(list, make_tuple = False):
         else:
             list[i] = round(list[i],3)
     return list
+if not variable_dict["ex 11.7"]:
+    variable_dict["update 11.26"] = st.checkbox("Use 11.26 to update mu?", value = False)
+else:
+    variable_dict["update 11.26"] = True
+if variable_dict["update 11.26"]:
+    st.markdown(f"Your method of computing $\mu$ is Equation 11.26.")
+else:
+    st.markdown("Your method of computing $\mu$ is $\mu^{new} = \gamma \mu$.")
+
+variable_dict['advanced'] =st.checkbox("Show Expanded Output", value = False)
+
+if variable_dict["advanced"]:
+    #data.append(round_list([iter, tuple(x), tuple(y), tuple(w), "-", "-", "-", f, mu, x.dot(w)], make_tuple = True))
+    #alist = ["k", "x", "y", "w", "dx", "dy", "dw", "f(x)", "mu", "x^Tw"]
+    s = b-matrix_small.dot(x[:n_s])
+    data.append(round_list([iter, mu, x.dot(w), f, x[:n_s], s, y, w[:n_s]], make_tuple=True))
+    alist = ["Iteration", "mu", "Gap x^Tw", "Objective", "x", "s", "y", "w"]
+else:
+    data.append(round_list([iter, mu, x.dot(w), f, x[:n_s]], make_tuple=True))
+    alist = ["Iteration", "mu", "Gap x^Tw", "Objective", "x"]
+
+
+
 
 
 while not np.dot(x,w) < epsilon:
@@ -96,13 +170,33 @@ while not np.dot(x,w) < epsilon:
     x += betap*dx
     y += betad*dy
     w += betad*dw
-    mu *= gamma
+    if variable_dict["update 11.26"]:
+        mu = gamma*x.dot(w)/(m_s+n_s)
+    else:
+        mu *= gamma
+
     iter += 1
     f = x[:len(c)].dot(c)
-    data.append(round_list([iter, x, y, w, dx, dy, dw, f, mu, x.dot(w)], make_tuple=True))
+    if variable_dict["advanced"]:
+        #data.append(round_list([iter, x, y, w, dx, dy, dw, f, mu, x.dot(w)], make_tuple=True))
+        data.append(round_list([iter, mu, x.dot(w), f, x[:n_s], s, y, w[:n_s]], make_tuple=True))
+    else: #["mu", "Gap x^Tw", "Objective", "x"]
+        data.append(round_list([iter, mu, x.dot(w), f, x[:n_s]], make_tuple=True))
     assert iter < 15, "Too many iterations"
 df = pd.DataFrame(data, columns=alist)
-st.write(df)
+st.markdown("""
+<style>
+table td:nth-child(1) {
+    display: none
+}
+table th:nth-child(1) {
+    display: none
+}
+</style>
+""", unsafe_allow_html=True)
+#st.dataframe(df)
+st.table(df)
+st.markdown("Note: The $\mu$ used in each row was used to compute that row. This differs slightly from table 11.2.")
 col_help = 0
 def latex_matrix(name, matrix_for_me, col_bool, col_use1, col_use2, col_use3, vec = True):
     global col_help
@@ -146,8 +240,10 @@ if st.button("Show all the matrixes please.") or True:
     w = np.array(w_i)
     y = np.array(y_i)
     f = x[:len(c)].dot(c)
-    mu = gamma * np.dot(x, w) / len(x)
-    mu = 5
+    if variable_dict["update 11.26"]:
+        mu = gamma * np.dot(x, w) / len(x)
+    else:
+        mu = 5
     iter = 0
     while not np.dot(x, w) < epsilon:
         diagx = np.diagflat(x)
