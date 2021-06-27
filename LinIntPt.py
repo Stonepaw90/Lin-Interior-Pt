@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
+import sympy
 
 
 from st_aggrid import AgGrid, DataReturnMode, GridUpdateMode, GridOptionsBuilder
@@ -20,7 +21,7 @@ st.sidebar.write("""$\gamma$: Duality gap parameter.""")
 gamma = st.sidebar.number_input(r"""""", value = 0.25, step=0.01, help = r"""The complimentary slackness parameter $\mu$ is multiplied by $\gamma$ each iteration such that $\mu \rightarrow 0$.""")
 #st.sidebar.markdown("""---""")
 st.title("Primal-dual Interior Point Algorithm for Linear Programs")
-st.write("Use this website to solve problems with the Primal-dual Interior Point Algorithm for Linear Programs from [Section 11.3](https://www.wiley.com/go/veatch/convexandlinearoptimization).")
+st.write("Use this website to solve problems with algorithm from [Section 11.3](https://www.wiley.com/go/veatch/convexandlinearoptimization).")
 #variable_dict["advanced"] = st.sidebar.checkbox("Advanced output", value = False)
 st.sidebar.markdown('''
 #### Coded by [Abraham Holleran](https://github.com/Stonepaw90) :sunglasses:
@@ -76,28 +77,35 @@ st.write("Your matrix is",matrix_small)
 #        matrix = np.array(matrix)
 #        st.write("Your manually constructed matrix is:" ,matrix)
 #else:
-st.header("Input your problem data")
-col = st.beta_columns(2)
-col_help = 0
-with col[0]:
-    b = np.array([float(i) for i in st.text_input("A b vector separated by spaces, i.e. \"2 1\"", value = "2 1").split(" ")])
-with col[1]:
-    c = np.array([float(i) for i in st.text_input("A c vector separated by spaces, i.e. \"1 2 0 0\"", value = "1 2 0 0").split(" ")])
-st.header("Input your initial variables")
-col = st.beta_columns(2)
-with col[0]:
-    x_i = [float(i) for i in st.text_input("An x vector separated by spaces, i.e. \"4 3 1 9\"", value = "4 3 1 9").split(" ")]
-with col[1]:
-    y_i = [float(i) for i in st.text_input("A y vector separated by spaces, i.e. \"2 .5\"", value = "2 .5").split(" ")]
-
-
-
-if variable_dict["ex 11.7"]:
+if not variable_dict["ex 11.7"]:
+    st.header("Input your problem data")
+    col = st.beta_columns(2)
+    col_help = 0
+    with col[0]:
+        b = np.array([float(i) for i in st.text_input("A b vector separated by spaces, i.e. \"2 1\"", value = "2 1").split(" ")])
+    with col[1]:
+        c = np.array([float(i) for i in st.text_input("A c vector separated by spaces, i.e. \"1 2 0 0\"", value = "1 2 0 0").split(" ")])
+    st.header("Input your initial variables")
+    col = st.beta_columns(2)
+    with col[0]:
+        x_i = [float(i) for i in st.text_input("An x vector separated by spaces, i.e. \"4 3 1 9\"", value = "4 3 1 9").split(" ")]
+    with col[1]:
+        y_i = [float(i) for i in st.text_input("A y vector separated by spaces, i.e. \"2 .5\"", value = "2 .5").split(" ")]
+elif variable_dict["ex 11.7"]:
     x_i = [3, 3, 8.5, 6, 7]
     w_i = [1.0,2.0,2.0,2.0,1.0]
     b = np.array([16,12,10])
     c = np.array([4,3])
     y_i = [2.0, 2.0, 1.0]
+    st.header("Example 11.7 data is:")
+    col = st.beta_columns(5)
+    col_helper1 = 0
+    var = [sympy.Matrix(i) for i in [b, c, w_i, x_i, y_i]]
+    names = ["b", "c", "w", "x", "y"]
+    for i in range(5):
+        with col[col_helper1%5]:
+            st.latex(names[i] + "=" + sympy.latex(var[i]))
+            col_helper1 += 1
 #s = b - matrix.dot(x_i[:len(c)])
 x = np.array(x_i)
 y = np.array(y_i)
@@ -108,13 +116,18 @@ w_i = list(matrix.T.dot(y)-c_1)
 w = np.array(w_i)
 f= x[:n_s].dot(c[:n_s])
 #y = np.array([2,.5])
+#if not variable_dict["ex 11.7"]:
+#    variable_dict["update 11.26"] = st.checkbox("Use 11.26 to update mu?", value = False)
+#else:
+#    variable_dict["update 11.26"] = True
+variable_dict["update 11.26"] = st.checkbox("Use 11.26 to update mu?", value = False)
 if variable_dict["update 11.26"]:
     mu = gamma*np.dot(x,w)/len(x)
 #st.write("mu=",mu)
 elif variable_dict["ex 11.7"]:
     mu = 5
 else:
-    mu = st.number_input("mu", value = 5)
+    mu = st.number_input("initial mu", value = 5)
 iter = 0
 data = []
 def round_list(list, make_tuple = False):
@@ -124,23 +137,22 @@ def round_list(list, make_tuple = False):
         elif type(list[i]) is list or type(list[i]) is np.ndarray:
             try:
                 for j in range(len(list[i])):
-                    list[i][j] = round(list[i][j], 3)
+                    list[i][j] = round(list[i][j], 4)
                 if make_tuple:
                     list[i] = tuple(list[i])
             except:
                 pass
         else:
-            list[i] = round(list[i],3)
+            list[i] = round(list[i],4)
     return list
-if not variable_dict["ex 11.7"]:
-    variable_dict["update 11.26"] = st.checkbox("Use 11.26 to update mu?", value = False)
-else:
-    variable_dict["update 11.26"] = True
+
 if variable_dict["update 11.26"]:
     st.markdown(f"Your method of computing $\mu$ is Equation 11.26.")
 else:
-    st.markdown("Your method of computing $\mu$ is $\mu^{new} = \gamma \mu$.")
-
+    st.markdown("Your method of updating $\mu$ each iteration is $\mu^{new} = \gamma \mu$.")
+col = st.beta_columns(3)
+with col[1]:
+    mu = st.number_input("initial mu (For Testing)", value = 5)
 variable_dict['advanced'] =st.checkbox("Show Expanded Output", value = False)
 
 if variable_dict["advanced"]:
@@ -227,6 +239,35 @@ def latex_matrix(name, matrix_for_me, col_bool, col_use1, col_use2, col_use3, ve
     except:
         st.write("Something broke while trying to print a matrix.")
     col_help += 1
+def latex_matrix(name, matrix_for_me, col_bool, col_use1, col_use2, col_use3, vec = True):
+    global col_help
+    latex_string = name + " = " + "\\begin{bmatrix}  "
+    shape_tuple = matrix_for_me.shape
+    for i in range(len(matrix_for_me)):
+        if vec:
+            latex_string += str  (matrix_for_me[i]) + " \\\\ "
+        else:
+            latex_string += str(matrix_for_me[i]) + " & "
+        if len(shape_tuple) > 1:
+            if ((i + 1) % shape_tuple[1] == 0):
+                latex_string = latex_string[:-3] + " \\\\ "
+    latex_string = latex_string[:-3] + "  \\end{bmatrix}"
+    try:
+        if col_bool:
+            if col_help % 3 == 0:
+                with col_use1:
+                    st.latex(latex_string)
+            elif col_help % 3 == 1:
+                with col_use2:
+                    st.latex(latex_string)
+            else:
+                with col_use3:
+                    st.latex(latex_string)
+        else:
+            st.latex(latex_string)
+    except:
+        st.write("Something broke while trying to print a matrix.")
+    col_help += 1
 def diagonal_matrix(x):
     string = f"\\begin{{bmatrix}}"
     x_l = len(x)
@@ -235,7 +276,16 @@ def diagonal_matrix(x):
         string = string[:-3] + "\\\\ "
     string = string + "\\end{bmatrix}"
     return string
-if st.button("Show all the matrixes please.") or True:
+def digit_fix(subs):
+    for i,j in enumerate(subs):
+        if j%1 == 0:
+            subs[i] = int(j)
+        else:
+            subs[i] = j.round(4)
+            if subs[i] < 0.0001 and subs[i] > -0.0001:
+                subs[i] = 0
+    return(subs)
+if st.button("Detailed output of all iterations."):
     x = np.array(x_i)
     w = np.array(w_i)
     y = np.array(y_i)
@@ -253,20 +303,45 @@ if st.button("Show all the matrixes please.") or True:
         dy = np.linalg.inv(matrix.dot(diagx).dot(diagwinv).dot(matrix.T)).dot(matrix).dot(diagwinv).dot(vmu)
         dw = matrix.T.dot(dy)
         dx = diagwinv.dot(vmu - diagx.dot(dw))
-        matrix_string = ["\\mathbf{v}(\\mu)", "\\mathbf{X}", "\\mathbf{W}",
+        matrix_string = ["\\mathbf{X}", "\\mathbf{W}", "\\mathbf{X}\\mathbf{W}^{-1}",
+                         "\mu\\mathbf{1}", "\\mathbf{XW1}", "\\mathbf{v}(\\mu)",
+                         "A", "\\mathbf{AX}\\mathbf{W}^{-1}\\mathbf{A}^T",
                          "\\mathbf{d}^x", "\\mathbf{d}^y", "\\mathbf{d}^w"]
-        matrix_list = round_list([vmu, np.diagflat([round(i, 4) for i in x]), np.diagflat([round(i, 4) for i in w]), dx, dy, dw], False)
+        complicated_eq = matrix.dot(diagx).dot(diagwinv).dot(matrix.T)
+        matrix_list = round_list([np.diagflat([round(i, 4) for i in x]), np.diagflat([round(i, 4) for i in w]), diagx.dot(diagwinv).round(4),
+                                  mu * np.ones(len(x)), diagx.dot(diagw).dot(np.ones(len(x))), vmu,
+                                  matrix, complicated_eq, dx, dy, dw], False)
+
+        st.write(f"Iteration {iter}")
         col = st.beta_columns(3)
         for i in range(len(matrix_string)):
             #col_help += 1
-            if i == 1 or i == 2:
+
+            if i in [0,1,2,6,7]:
                 with col[col_help % 3]:
-                    st.latex(matrix_string[i] + "=" + diagonal_matrix(matrix_list[i]))
-                    col_help += 1
-                #if i == 2:
-                    #st.write("Solving (11.22),")
+                    if i == 6:
+                        st.latex(matrix_string[7] + "=" + sympy.latex(sympy.Matrix(complicated_eq.round(4))))
+                        col_help+=2
+                    elif i == 7:
+                        st.latex("(" + matrix_string[7] + ")^{-1}=" + sympy.latex(sympy.Matrix(np.linalg.inv(complicated_eq).round(4))))
+                        col_help+=1
+                    else:
+                        st.latex(matrix_string[i] + "=" + diagonal_matrix(matrix_list[i]))
+                        col_help += 1
             else:
                 latex_matrix(matrix_string[i], matrix_list[i], True, col[0], col[1], col[2])
+            if i == 2:
+                st.write("Details of (11.22):")
+                col = st.beta_columns(3)
+                col_help = 2
+            if i == 5:
+                st.write("Details of (11.23):")
+                col = st.beta_columns(3)
+                col_help = 0
+            if i == 7:
+                st.markdown("Solving for **d**:")
+                col = st.beta_columns(3)
+                col_help = 0
         st.write("The step sizes are")
         optionp = min([alpha * j for j in [-x[i] / dx[i] if dx[i] < 0 else 100 for i in range(len(x))]])
         optiond = min([alpha * j for j in [-w[i] / dw[i] if dw[i] < 0 else 100 for i in range(len(w))]])
