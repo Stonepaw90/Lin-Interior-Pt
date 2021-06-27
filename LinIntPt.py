@@ -65,7 +65,7 @@ if variable_dict["ex 11.7"]:
     n_s = 2
 else:
     matrix_small = np.array(new_df)
-st.write("Your matrix is",matrix_small)
+st.latex("\\text{Your matrix is }" + sympy.latex(sympy.Matrix(matrix_small)))
 #if st.button("Is your matrix incorrect? Click to enter manually."):
 #    matrix_input = st.text_area("Write your matrix with spaces separating the elements and a comma after each row, i.e. \"1 3 4 6, 5 3 2 1, 6 9 3 2\"", value = "1 3 4 6, 5 3 2 1, 6 9 3 2")
 #    if matrix_input:
