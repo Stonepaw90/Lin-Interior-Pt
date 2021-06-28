@@ -8,61 +8,38 @@ from st_aggrid import AgGrid, DataReturnMode, GridUpdateMode, GridOptionsBuilder
 st.set_page_config(layout="wide")
 
 
-variable_dict = {"ex 11.7":False, "advanced":False, "update 11.26":False, "standard":False}
+variable_dict = {"ex 11.7":False, "advanced":False, "update 11.26":False, "standard":False, "done":False}
 
-#st.sidebar.header("Parameters")
-#st.sidebar.write(r"""$\alpha$: Step size parameter.""")
-#alpha = st.sidebar.number_input(r"""""", value = 0.9, step=0.01,min_value = 0.0, max_value = 0.999, help = r"""Ensures each variable is reduced by no more than a factor of $1 - \alpha$.""")
-#st.sidebar.markdown("""---""")
-#st.sidebar.write("""$\epsilon$: Optimality tolerance.""")
-#epsilon = st.sidebar.number_input(r"""""", value = 0.01, step=0.001, format="%f", min_value = 0.00001, help = r"""Stop the algorithm once **x**$^T$**w**$< \epsilon$.""")
-#st.sidebar.markdown("""---""")
-#st.sidebar.write("""$\gamma$: Duality gap parameter.""")
-#gamma = st.sidebar.number_input(r"""""", value = 0.25, step=0.01, help = r"""The complimentary slackness parameter $\mu$ is multiplied by $\gamma$ each iteration such that $\mu \rightarrow 0$.""")
-#st.sidebar.markdown("""---""")
 st.title("Interior Point Algorithm for Linear Programs")
 st.write("This website uses [Algorithm 11.3](https://www.wiley.com/go/veatch/convexandlinearoptimization) (Primal-dual path following) to solve a linear program in canonical form."
          " If the problem is entered in standard form, it is converted to canonical form.")
-#variable_dict["advanced"] = st.sidebar.checkbox("Advanced output", value = False)
-#st.sidebar.markdown('''
-##### Coded by [Abraham Holleran](https://github.com/Stonepaw90) :sunglasses:
-#''')
 st.header("Standard and canonical form notation")
 st.markdown("The canonical form problem has $m$ constraints and $n$ variables:")
 col = st.beta_columns(2)
 with col[0]:
     st.write("Primal")
     st.latex(r"""\begin{aligned}
-    &\text{max } \mathbf{c}^T\mathbf{x}& \\
-    &\text{s.t.  } A\mathbf{x} = b & \\
+    &\text{max } c^Tx& \\
+    &\text{s.t.  } Ax = b & \\
     &x \geq 0& \end{aligned}""")
 with col[1]:
     st.write("Dual")
     st.latex(r"""\begin{aligned}
-    &\text{min } \mathbf{b}^T\mathbf{y}& \\
-    &\text{s.t.  } A^T\mathbf{y} -w = c & \\
+    &\text{min } b^Ty& \\
+    &\text{s.t.  } A^Ty -w = c & \\
     &w \geq 0& \end{aligned}""")
 st.markdown("The standard form problem has $m$ constraints and $n′$ variables. Call the $m \\times n′$ coefficient matrix $\\bar{{A}}$ , etc.:")
 st.latex(r"""\begin{aligned}
-    &\text{max } \bar{\mathbf{c}}^T\bar{\mathbf{x}}& \\
-    &\text{s.t.  } \bar{A}\bar{\mathbf{x}} \leq b & \\
+    &\text{max } \bar{c}^T\bar{x}& \\
+    &\text{s.t.  } \bar{A}\bar{x} \leq b & \\
     &\bar{x} \geq 0& \end{aligned}""")
-st.write("When converted to canonical form, the constraints are $\\bar{\\mathbf{A}}\\bar{\\mathbf{x}}+\\mathbf{s}=\\mathbf{b}$. Here $s$ contains $m$ slack variables and $\mathbf{w}$ contains $n = m + n^′$ dual surplus variables."
-" Strict feasibility for the primal requires $\\bar{\\mathbf{x}}>0, \\mathbf{s}>0$. Strict feasibility for the dual requires $\mathbf{w} > 0$.")
-st.write("Enter the problem and strictly feasible initial feasible solutions below, then adjust the parameters on the left. The problem is re-computed after any change. ")
+st.write("When converted to canonical form, the constraints are $\\bar{A}\\bar{x}+s=b$. Here $s$ contains $m$ slack variables and $w$ contains $n = m + n^′$ dual surplus variables. "
+         "Strict feasibility for the primal requires $\\bar{x}>0, s>0$. Strict feasibility for the dual requires $w > 0$.")
+st.write("Enter the problem and strictly feasible initial feasible solutions below, along with the parameters for the problem. Once you press submit, the problem is re-computed.")
 
-variable_dict["ex 11.7"] = st.checkbox("Follow along with Example. 11.7", value=True)
+variable_dict["ex 11.7"] = st.checkbox("Load Example 11.7", value=True)
 if not variable_dict["ex 11.7"]:
     variable_dict['standard'] = st.checkbox("Standard form", value = False)
-
-#c1, c2 = st.beta_columns(2)
-#with c2:
-#    n_s = st.number_input("How many rows in your standard form A matrix?", value = 3)
-#with c1:
-#    m_s = st.number_input("How many columns in your standard form A matrix?", value = 4)
-    #st.sidebar.number_input("Grid height", min_value=200, max_value=800, value=200)
-
-done = False
 if not variable_dict["ex 11.7"]:
     with st.form('input') as f:
         if variable_dict["standard"]:
@@ -94,11 +71,11 @@ if not variable_dict["ex 11.7"]:
         col = st.beta_columns(2)
         col_help = 0
         if variable_dict['standard']:
-            help_list = [r"""$\mathbf{b}$ is an $\mathbf{m}$-vector""", r"""$\bar{\mathbf{c}}$ is an $\mathbf{n}^′$-vector""",
-                         r"""$\mathbf{x}$ is an $\mathbf{n}^′$-vector""", r"""$\mathbf{y}$ is an $\mathbf{m}$-vector"""]
+            help_list = [r"""$b$ is an $m$-vector""", r"""$\bar{c}$ is an $n^′$-vector""",
+                         r"""$x$ is an $n^′$-vector""", r"""$y$ is an $m$-vector"""]
         else:
-            help_list = [r"""$\mathbf{b}$ is an $\mathbf{m}$-vector""", r"""$\mathbf{c}$ is an $\mathbf{n}$-vector""",
-                         r"""$\mathbf{x}$ is an $\mathbf{n}$-vector""", r"""$\mathbf{y}$ is an $\mathbf{m}$-vector"""]
+            help_list = [r"""$b$ is an $m$-vector""", r"""$c$ is an $n$-vector""",
+                         r"""$x$ is an $n$-vector""", r"""$y$ is an $m$-vector"""]
         with col[0]:
             b = np.array([float(i) for i in
                           st.text_input("A b vector separated by spaces, i.e. \"2 1\"", help = help_list[0], value="2 1").split(" ")])
@@ -116,7 +93,7 @@ if not variable_dict["ex 11.7"]:
                    st.text_input("A y vector separated by spaces, i.e. \"2 .5\"", value="2 .5", help = help_list[3]).split(" ")]
 
         st.header("Parameters")
-        col = st.beta_columns(3)
+        col = st.beta_columns(2)
         with col[0]:
             st.write(r"""$\alpha$: Step size parameter.""")
             alpha = st.number_input(r"""""", value=0.9, step=0.01, min_value=0.0, max_value=0.999,
@@ -125,15 +102,18 @@ if not variable_dict["ex 11.7"]:
             st.write("""$\epsilon$: Optimality tolerance.""")
             epsilon = st.number_input(r"""""", value=0.01, step=0.001, format="%f", min_value=0.00001,
                                           help=r"""Stop the algorithm once **x**$^T$**w**$< \epsilon$.""")
-        with col[2]:
+        with col[0]:
             st.write("""$\gamma$: Duality gap parameter.""")
             gamma = st.number_input(r"""""", value=0.25, step=0.01,
                                         help=r"""The complimentary slackness parameter $\mu$ is multiplied by $\gamma$ each iteration such that $\mu \rightarrow 0$.""")
+        with col[1]:
+            st.write("""$\mu$: Positive complementary slackness parameter.""")
+            mu = st.number_input(r"""""", value = 5, step = 0.1)
 
-        done = st.form_submit_button()
+        variable_dict["done"] = st.form_submit_button()
         #done = True
 else:
-    done = True
+    variable_dict["done"] = True
     matrix_small = np.array([[1.5, 1], [1, 1], [0, 1]])
     m_s = 3
     n_s = 2
@@ -151,7 +131,7 @@ else:
 #        matrix = np.array(matrix)
 #        st.write("Your manually constructed matrix is:" ,matrix)
 #else:
-if done:
+if variable_dict["done"]:
     if not variable_dict["ex 11.7"]:
         st.header("Your data is:")
         x = np.array(x_i)
@@ -171,7 +151,7 @@ if done:
         c = np.array([4,3])
         y_i = [2.0, 2.0, 1.0]
         st.header("Example 11.7 data is:")
-    st.latex("\\mathbf{A} = " + sympy.latex(sympy.Matrix(matrix_small)))
+    st.latex("A = " + sympy.latex(sympy.Matrix(matrix_small)))
     col = st.beta_columns(5)
     col_helper1 = 0
     var = [sympy.Matrix(i) for i in [b, c, w_i, x_i, y_i]]
@@ -220,7 +200,7 @@ def round_list(list, make_tuple = False):
         else:
             list[i] = round(list[i],4)
     return list
-if done:
+if variable_dict["done"]:
     if variable_dict["update 11.26"]:
         st.markdown(f"Your method of computing $\mu$ is Equation 11.26.")
     else:
@@ -358,7 +338,7 @@ def digit_fix(subs):
     return(subs)
 def lt(x):
     return(sympy.latex(sympy.Matrix(x)))
-if st.button("Detailed output of all iterations.") and done:
+if st.button("Detailed output of all iterations.") and variable_dict["done"]:
     x = np.array(x_i)
     w = np.array(w_i)
     y = np.array(y_i)
@@ -380,6 +360,10 @@ if st.button("Detailed output of all iterations.") and done:
                          "\mu\\mathbf{1}", "\\mathbf{XW1}", "\\mathbf{v}(\\mu)",
                          "A", "\\mathbf{AX}\\mathbf{W}^{-1}\\mathbf{A}^T",
                          "\\mathbf{d}^x", "\\mathbf{d}^y", "\\mathbf{d}^w"]
+        matrix_string = ["X", "W", "XW^{-1}",
+                         "\mu1", "XW1", "v(\\mu)",
+                         "A", "AXW^{-1}A^T",
+                         "d^x", "d^y", "d^w"]
         complicated_eq = matrix.dot(diagx).dot(diagwinv).dot(matrix.T)
         matrix_list = round_list([np.diagflat([round(i, 4) for i in x]), np.diagflat([round(i, 4) for i in w]), diagx.dot(diagwinv).round(4),
                                   mu * np.ones(len(x)), diagx.dot(diagw).dot(np.ones(len(x))), vmu,
@@ -438,11 +422,11 @@ if st.button("Detailed output of all iterations.") and done:
         st.latex(l_string)
         col = st.beta_columns(3)
         with col[0]:
-            st.latex("\\mathbf{x}^{new} =" + lt(digit_fix(x)) + "+" + str(round(betap,4)) + lt(digit_fix(dx)) + " = " + lt(digit_fix(x + betap * dx)))
+            st.latex("x^{new} =" + lt(digit_fix(x)) + "+" + str(round(betap,4)) + lt(digit_fix(dx)) + " = " + lt(digit_fix(x + betap * dx)))
         with col[1]:
-            st.latex("\\mathbf{y}^{new} =" + lt(digit_fix(y))+ "+" + str(round(betad,4)) + lt(digit_fix(dy)) + " = " + lt(digit_fix(y + betad * dy)))
+            st.latex("y^{new} =" + lt(digit_fix(y))+ "+" + str(round(betad,4)) + lt(digit_fix(dy)) + " = " + lt(digit_fix(y + betad * dy)))
         with col[2]:
-            st.latex("\\mathbf{w}^{new} ="+ lt(digit_fix(w)) + "+" + str(round(betad,4))+ lt(digit_fix(dw)) + " = " + lt(digit_fix(w + betad * dw)))
+            st.latex("w^{new} ="+ lt(digit_fix(w)) + "+" + str(round(betad,4))+ lt(digit_fix(dw)) + " = " + lt(digit_fix(w + betad * dw)))
         x += betap * dx
         y += betad * dy
         w += betad * dw
