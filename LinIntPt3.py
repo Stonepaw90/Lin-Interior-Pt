@@ -8,7 +8,7 @@ from st_aggrid import AgGrid, DataReturnMode, GridUpdateMode, GridOptionsBuilder
 st.set_page_config(layout="wide")
 
 
-variable_dict = {"ex 11.7":False, "advanced":False, "update 11.26":False, "standard":False, "done":False}
+variable_dict = {"advanced":False, "update 11.26":False, "standard":False, "done":False}
 
 st.title("Interior Point Algorithm for Linear Programs")
 st.write("This website uses [Algorithm 11.3](https://www.wiley.com/go/veatch/convexandlinearoptimization) (Primal-dual path following) to solve a linear program in canonical form."
@@ -41,14 +41,14 @@ variable_dict["ex 11.7"] = st.checkbox("Load Example 11.7", value=True)
 if not variable_dict["ex 11.7"]:
     variable_dict['standard'] = st.checkbox("Standard form", value = False)
 if not variable_dict["ex 11.7"]:
-    with st.form('input') as f:
+    with st.form('matrix'):
         if variable_dict["standard"]:
             st.markdown("## Input your matrix $\\bar{A}$")
             st.markdown("Write your matrix $\\bar{A}$ ($m \\times n^′$) in standard form in the top-left of this entry grid.")
         else:
             st.markdown("## Input your matrix A")
             st.write("Write your matrix A ($m \\times n$) in canonical form in the top-left of this entry grid.")
-        input_dataframe = pd.DataFrame('', index=range(10), columns=["C" + str(i) for i in range(10)])
+        input_dataframe = pd.DataFrame('', index=[str(i) for i in range(10)], columns=[str(i) for i in range(10)])
         grid_height = 335
 
         response = AgGrid(
@@ -62,23 +62,33 @@ if not variable_dict["ex 11.7"]:
             defaultWidth=5,
             fit_columns_on_grid_load=False,
             key='input_frame')
-        response['data'] = response['data'].replace("nan", "")
-        n_s = len([i for i in response['data'].loc[0] if i])
-        m_s = len([i for i in response['data']["C0"] if i])
-        new_df = response['data'].loc[0:(m_s-1)].iloc[:,0:(n_s)].dropna()
-        matrix_small = np.array(new_df, dtype = float)
+        messy_matrix = response['data'].replace("nan", "")
+        messy_matrix.replace(to_replace="", value=np.nan, inplace=True)
+        messy_matrix = messy_matrix.dropna(axis=1, how='all')
+        messy_matrix = messy_matrix.dropna(axis=0, how='all')
+        matrix_small = np.array(messy_matrix, dtype = float)
+        m_s = matrix_small.shape[0]
+        n_s = matrix_small.shape[1]
+        done = st.form_submit_button()
+if done:
+    st.write(n_s, m_s)
+    st.write(matrix_small)
+st.stop()
+if not variable_dict["ex 11.7"] and done:
+    with st.form("input"):
         st.header("Input your problem data")
+        st.write("Enter vectors using spaces between entries, e.g.,\"1 4 3 2\".")
         col = st.beta_columns(2)
         col_help = 0
-        if variable_dict['standard']:
-            help_list = [r"""$b$ is an $m$-vector""", r"""$\bar{c}$ is an $n^′$-vector""",
-                         r"""$x$ is an $n^′$-vector""", r"""$y$ is an $m$-vector"""]
-        else:
-            help_list = [r"""$b$ is an $m$-vector""", r"""$c$ is an $n$-vector""",
-                         r"""$x$ is an $n$-vector""", r"""$y$ is an $m$-vector"""]
+        #if variable_dict['standard']:
+        #    help_list = [r"""$b$ is an $m$-vector""", r"""$\bar{c}$ is an $n^′$-vector""",
+        #                 r"""$x$ is an $n^′$-vector""", r"""$y$ is an $m$-vector"""]
+        #else:
+        #    help_list = [r"""$b$ is an $m$-vector""", r"""$c$ is an $n$-vector""",
+        #                 r"""$x$ is an $n$-vector""", r"""$y$ is an $m$-vector"""]
         with col[0]:
             b = np.array([float(i) for i in
-                          st.text_input("A b vector separated by spaces, i.e. \"2 1\"", help = help_list[0], value="2 1").split(" ")])
+                          st.text_input("Right-hand side \x1B[3m b  \x1B[0m", help = help_list[0], value="2 1").split(" ")])
         with col[1]:
             c = np.array([float(i) for i in
                           st.text_input("A c vector separated by spaces, i.e. \"1 2 0 0\"", value="1 2 0 0", help = help_list[1]).split(
@@ -108,7 +118,7 @@ if not variable_dict["ex 11.7"]:
                                         help=r"""The complimentary slackness parameter $\mu$ is multiplied by $\gamma$ each iteration such that $\mu \rightarrow 0$.""")
         with col[1]:
             st.write("""$\mu$: Positive complementary slackness parameter.""")
-            mu = st.number_input(r"""""", value = 5, step = 0.1)
+            mu = st.number_input("", value = 5, step = 0.1)
 
         variable_dict["done"] = st.form_submit_button()
         #done = True
