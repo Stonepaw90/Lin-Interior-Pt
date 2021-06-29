@@ -38,17 +38,26 @@ st.write("When converted to canonical form, the constraints are $\\bar{A}\\bar{x
 st.write("Enter the problem and strictly feasible initial feasible solutions below, along with the parameters for the problem. Once you press submit, the problem is re-computed.")
 
 variable_dict["ex 11.7"] = st.checkbox("Load Example 11.7", value=True)
+#col = st.beta_columns(2)
+#with col[0]:
+#    m_in = st.number_input("How many columns", value = 0, min_value=0, step = 1)
+#with col[1]:
+#    n_in = st.number_input("How many rows", value = 0,  min_value=0, step = 1)
+input_dataframe = pd.DataFrame('', index=[str(i + 1) for i in range(10)], columns=[str(i + 1) for i in range(10)])
+error=False
+done=False
 if not variable_dict["ex 11.7"]:
     variable_dict['standard'] = st.checkbox("Standard form", value = False)
 if not variable_dict["ex 11.7"]:
-    with st.form('matrix'):
+    #with st.form('matrix'):
+    if True:
         if variable_dict["standard"]:
-            st.markdown("## Input your matrix $\\bar{A}$")
-            st.markdown("Write your matrix $\\bar{A}$ ($m \\times n^′$) in standard form in the top-left of this entry grid.")
+            st.markdown("## Coefficient matrix A")
+            st.markdown("Write your matrix A ($m \\times n^′$) in standard form in the top-left of this entry grid.")
         else:
-            st.markdown("## Input your matrix A")
+            st.markdown("## Coefficient matrix A")
             st.write("Write your matrix A ($m \\times n$) in canonical form in the top-left of this entry grid.")
-        input_dataframe = pd.DataFrame('', index=[str(i) for i in range(10)], columns=[str(i) for i in range(10)])
+        st.write("Warning: Submitting while a box is being edited will return an error. Before submitting, press enter or tab to confirm your edits.")
         grid_height = 335
 
         response = AgGrid(
@@ -59,70 +68,80 @@ if not variable_dict["ex 11.7"]:
             sortable=False,
             filter=False,
             resizable=True,
-            defaultWidth=5,
+            defaultWidth=15,
             fit_columns_on_grid_load=False,
             key='input_frame')
-        messy_matrix = response['data'].replace("nan", "")
-        messy_matrix.replace(to_replace="", value=np.nan, inplace=True)
-        messy_matrix = messy_matrix.dropna(axis=1, how='all')
-        messy_matrix = messy_matrix.dropna(axis=0, how='all')
-        matrix_small = np.array(messy_matrix, dtype = float)
-        m_s = matrix_small.shape[0]
-        n_s = matrix_small.shape[1]
-        done = st.form_submit_button()
-if done:
-    st.write(n_s, m_s)
-    st.write(matrix_small)
-st.stop()
+        error = False
+        try:
+            messy_matrix = response['data'].replace("nan", "")
+            messy_matrix.replace(to_replace="", value=np.nan, inplace=True)
+            messy_matrix = messy_matrix.dropna(axis=1, how='all')
+            messy_matrix = messy_matrix.dropna(axis=0, how='all')
+            matrix_small = np.array(messy_matrix, dtype = float)
+            m_s = matrix_small.shape[0]
+            n_s = matrix_small.shape[1]
+            error = np.isnan(matrix_small).any()
+        except:
+            error = True
+        done = True
+if error:
+    st.write("Something is wrong with your matrix.")
+    try:
+        st.latex("A = " + sympy.latex(sympy.Matrix(matrix_small)))
+        st.write("It has shape (", m_s, "*", n_s, ") Please ensure dimensions and entries are correct and submit again.")
+    except:
+        pass
+    st.stop()
+elif done:
+    st.write("This is your matrix. It has shape (", m_s, "*", n_s, ") If this is incorrect, submit again.")
+    st.latex("A = " + sympy.latex(sympy.Matrix(matrix_small)))
 if not variable_dict["ex 11.7"] and done:
-    with st.form("input"):
-        st.header("Input your problem data")
-        st.write("Enter vectors using spaces between entries, e.g.,\"1 4 3 2\".")
-        col = st.beta_columns(2)
-        col_help = 0
-        #if variable_dict['standard']:
-        #    help_list = [r"""$b$ is an $m$-vector""", r"""$\bar{c}$ is an $n^′$-vector""",
-        #                 r"""$x$ is an $n^′$-vector""", r"""$y$ is an $m$-vector"""]
-        #else:
-        #    help_list = [r"""$b$ is an $m$-vector""", r"""$c$ is an $n$-vector""",
-        #                 r"""$x$ is an $n$-vector""", r"""$y$ is an $m$-vector"""]
-        with col[0]:
-            b = np.array([float(i) for i in
-                          st.text_input("Right-hand side \x1B[3m b  \x1B[0m", help = help_list[0], value="2 1").split(" ")])
-        with col[1]:
-            c = np.array([float(i) for i in
-                          st.text_input("A c vector separated by spaces, i.e. \"1 2 0 0\"", value="1 2 0 0", help = help_list[1]).split(
-                              " ")])
-        st.header("Input your initial variables")
-        col = st.beta_columns(2)
-        with col[0]:
-            x_i = [float(i) for i in
-                   st.text_input("An x vector separated by spaces, i.e. \"1 .5 .5 1.5\"", value="1 .5 .5 1.5", help = help_list[2]).split(" ")]
-        with col[1]:
-            y_i = [float(i) for i in
-                   st.text_input("A y vector separated by spaces, i.e. \"2 .5\"", value="2 .5", help = help_list[3]).split(" ")]
+    st.header("Input your problem data")
+    st.write("Enter vectors using spaces between entries, e.g.,\"1 4 3 2\".")
+    col = st.beta_columns(2)
+    col_help = 0
+    #if variable_dict['standard']:
+    #    help_list = [r"""$b$ is an $m$-vector""", r"""$\bar{c}$ is an $n^′$-vector""",
+    #                 r"""$x$ is an $n^′$-vector""", r"""$y$ is an $m$-vector"""]
+    #else:
+    #    help_list = [r"""$b$ is an $m$-vector""", r"""$c$ is an $n$-vector""",
+    #                 r"""$x$ is an $n$-vector""", r"""$y$ is an $m$-vector"""]
+    with col[0]:
+        b = np.array([float(i) for i in
+                      st.text_input("Right-hand side \x1B[3m b  \x1B[0m", value="2 1").split(" ")])
+    with col[1]:
+        c = np.array([float(i) for i in
+                      st.text_input("A c vector separated by spaces, i.e. \"1 2 0 0\"", value="1 2 0 0").split(
+                          " ")])
+    st.header("Input your initial variables")
+    col = st.beta_columns(2)
+    with col[0]:
+        x_i = [float(i) for i in
+               st.text_input("An x vector separated by spaces, i.e. \"1 .5 .5 1.5\"", value="1 .5 .5 1.5").split(" ")]
+    with col[1]:
+        y_i = [float(i) for i in
+               st.text_input("A y vector separated by spaces, i.e. \"2 .5\"", value="2 .5").split(" ")]
 
-        st.header("Parameters")
-        col = st.beta_columns(2)
-        with col[0]:
-            st.write(r"""$\alpha$: Step size parameter.""")
-            alpha = st.number_input(r"""""", value=0.9, step=0.01, min_value=0.0, max_value=0.999,
-                                        help=r"""Ensures each variable is reduced by no more than a factor of $1 - \alpha$.""")
-        with col[1]:
-            st.write("""$\epsilon$: Optimality tolerance.""")
-            epsilon = st.number_input(r"""""", value=0.01, step=0.001, format="%f", min_value=0.00001,
-                                          help=r"""Stop the algorithm once **x**$^T$**w**$< \epsilon$.""")
-        with col[0]:
-            st.write("""$\gamma$: Duality gap parameter.""")
-            gamma = st.number_input(r"""""", value=0.25, step=0.01,
-                                        help=r"""The complimentary slackness parameter $\mu$ is multiplied by $\gamma$ each iteration such that $\mu \rightarrow 0$.""")
-        with col[1]:
-            st.write("""$\mu$: Positive complementary slackness parameter.""")
-            mu = st.number_input("", value = 5, step = 0.1)
+    st.header("Parameters")
+    col = st.beta_columns(2)
+    with col[0]:
+        st.write(r"""$\alpha$: Step size parameter.""")
+        alpha = st.number_input(r"""""", value=0.9, step=0.01, min_value=0.0, max_value=0.999,
+                                    help=r"""Ensures each variable is reduced by no more than a factor of $1 - \alpha$.""")
+    with col[1]:
+        st.write("""$\epsilon$: Optimality tolerance.""")
+        epsilon = st.number_input(r"""""", value=0.01, step=0.001, format="%f", min_value=0.00001,
+                                      help=r"""Stop the algorithm once **x**$^T$**w**$< \epsilon$.""")
+    with col[0]:
+        st.write("""$\gamma$: Duality gap parameter.""")
+        gamma = st.number_input(r"""""", value=0.25, step=0.01,
+                                    help=r"""The complimentary slackness parameter $\mu$ is multiplied by $\gamma$ each iteration such that $\mu \rightarrow 0$.""")
+    with col[1]:
+        st.write("""$\mu$: Positive complementary slackness parameter.""")
+        mu = st.number_input("", value = 5.0, step = 0.1)
 
-        variable_dict["done"] = st.form_submit_button()
-        #done = True
-else:
+    variable_dict["done"] = st.checkbox("Are all your variables correct?")
+elif variable_dict["ex 11.7"]:
     variable_dict["done"] = True
     matrix_small = np.array([[1.5, 1], [1, 1], [0, 1]])
     m_s = 3
@@ -130,17 +149,11 @@ else:
     alpha = .9
     epsilon = .01
     gamma = .25
-#if st.button("Is your matrix incorrect? Click to enter manually."):
-#    matrix_input = st.text_area("Write your matrix with spaces separating the elements and a comma after each row, i.e. \"1 3 4 6, 5 3 2 1, 6 9 3 2\"", value = "1 3 4 6, 5 3 2 1, 6 9 3 2")
-#    if matrix_input:
-#        matrix= [i.split(" ") for i in matrix_input.split(", ")]
-#        #st.write(matrix)
-#        for i in range(len(matrix)):
-#            for j in range(len(matrix[i])):
-#               matrix[i][j] = float(matrix[i][j])
-#        matrix = np.array(matrix)
-#        st.write("Your manually constructed matrix is:" ,matrix)
-#else:
+    x_i = [3, 3, 8.5, 6, 7]
+    w_i = [1.0, 2.0, 2.0, 2.0, 1.0]
+    b = np.array([16, 12, 10])
+    c = np.array([4, 3])
+    y_i = [2.0, 2.0, 1.0]
 if variable_dict["done"]:
     if not variable_dict["ex 11.7"]:
         st.header("Your data is:")
@@ -155,11 +168,6 @@ if variable_dict["done"]:
             w = matrix_small.T.dot(y) - c
         w_i = list(w)
     elif variable_dict["ex 11.7"]:
-        x_i = [3, 3, 8.5, 6, 7]
-        w_i = [1.0,2.0,2.0,2.0,1.0]
-        b = np.array([16,12,10])
-        c = np.array([4,3])
-        y_i = [2.0, 2.0, 1.0]
         st.header("Example 11.7 data is:")
     st.latex("A = " + sympy.latex(sympy.Matrix(matrix_small)))
     col = st.beta_columns(5)
