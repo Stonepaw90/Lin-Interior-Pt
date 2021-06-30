@@ -106,13 +106,13 @@ if not variable_dict["ex 11.7"]:
             n_full = n_s
         with col[1]:
             c = np.array([float(i) for i in
-                          st.text_input(f"Objective function coefficients c (a {n_s}-vector)", value="1 2").split(
+                          st.text_input(f"Objective function coefficients c (a {n_s}-vector)", value="1 2 0 0").split(
                               " ")])
         st.header("Initial solution")
         col = st.beta_columns(2)
         with col[0]:
             x = np.array([float(i) for i in
-                          st.text_input(f"x (a {n_s}-vector)", value="1 .5").split(" ")])
+                          st.text_input(f"x (a {n_s}-vector)", value="1 .5 .5 1.5").split(" ")])
         with col[1]:
             y = np.array([float(i) for i in
                           st.text_input(f"y (a {m_s}-vector)", value="2 .5").split(" ")])
@@ -130,7 +130,7 @@ if not variable_dict["ex 11.7"]:
             epsilon = st.number_input(r"""""", value=0.01, step=0.001, format="%f", min_value=0.00001,
                                       help=r"""Stop the algorithm once **x**$^T$**w**$< \epsilon$.""")
             st.write("""$\mu$: Initial complementary slackness parameter.""")
-            mu = st.number_input("", value=5.0, step=0.1)
+            mu = st.number_input("", value=0.25, step=0.1)
         variable_dict["done"] = st.checkbox("Are all your variables correct?")
         # In this case, it's not var["ex 11.7"] so I could put "your data is:" but IDK about checkbox
         ###TODO
