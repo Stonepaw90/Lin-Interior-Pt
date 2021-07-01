@@ -7,9 +7,12 @@ from st_aggrid import AgGrid, DataReturnMode, GridUpdateMode, GridOptionsBuilder
 
 st.set_page_config(layout="wide")
 
-variable_dict = {"advanced": False, "update 11.26": False, "standard": False, "done": False}
+variable_dict = {"advanced": False, "update 11.26": False, "standard": False, "done": False, "ex 11.7":False}
 
 st.title("Interior Point Algorithm for Linear Programs")
+st.markdown('''
+### Coded by [Abraham Holleran](https://github.com/Stonepaw90) :sunglasses:
+''')
 st.write(
     "This website uses [Algorithm 11.3](https://www.wiley.com/go/veatch/convexandlinearoptimization) (Primal-dual path following) to solve a linear program in canonical form."
     " If the problem is entered in standard form, it is converted to canonical form.")
@@ -29,7 +32,7 @@ with col[1]:
     &\text{s.t.  } A^Ty -w = c & \\
     &w \geq 0& \end{aligned}""")
 st.markdown(
-    "The standard form problem has $m$ constraints and $n′$ variables. Call the $m \\times n′$ coefficient matrix $\\bar{{A}}$ , etc.:")
+    "The standard form problem has $m$ constraints and $n^′$ variables. Call the $m \\times n^′$ coefficient matrix $\\bar{{A}}$ , etc.:")
 st.latex(r"""\begin{aligned}
     &\text{max } \bar{c}^T\bar{x}& \\
     &\text{s.t.  } \bar{A}\bar{x} \leq b & \\
@@ -38,26 +41,36 @@ st.write(
     "When converted to canonical form, the constraints are $\\bar{A}\\bar{x}+s=b$. Here $s$ contains $m$ slack variables and $w$ contains $n = m + n^′$ dual surplus variables. "
     "Strict feasibility for the primal requires $\\bar{x}>0, s>0$. Strict feasibility for the dual requires $w > 0$.")
 st.write(
-    "Enter the problem and strictly feasible initial feasible solutions below, along with the parameters for the problem. The problem is re-solved after any changes.")
+    "Enter the problem, strictly feasible initial solutions, and parameters.")
 
-variable_dict["ex 11.7"] = st.checkbox("Load Example 11.7", value=True)
-input_dataframe = pd.DataFrame('', index=[str(i + 1) for i in range(10)], columns=[str(i + 1) for i in range(10)])
-error = False
-# If we're writing our own data:
-if not variable_dict["ex 11.7"]:
-    # You can choose if standard or not standard.
-    variable_dict['standard'] = st.checkbox("Standard form", value=False)
-    st.markdown("## Coefficient matrix A")
-    # Standard
-    if variable_dict["standard"]:
-        st.markdown("Write your matrix A ($m \\times n^′$) in standard form in the top-left of this entry grid."
-                    " The program will append the identity matrix, converting everything to canonical form.")
-    # Canonical
-    else:
-        st.write("Write your matrix A ($m \\times n$) in canonical form in the top-left of this entry grid.")
-    st.write(
-        "Warning: Submitting while a box is being edited will return an error. Before submitting, press enter or tab to confirm your edits.")
+
+# You can choose if standard or not standard.
+variable_dict['standard'] = st.checkbox("Standard form", value=False)
+if variable_dict["standard"]:
+    variable_dict["ex 11.7"] = st.checkbox("Load Example 11.7", value=False)
+if variable_dict["ex 11.7"]:
+    matrix_small = np.array([[1.5, 1], [1, 1], [0, 1]])
+    input_dataframe = pd.DataFrame(matrix_small, index=[str(i + 1) for i in range(3)], columns=[str(i + 1) for i in range(2)])
+    default_var = ["16 12 10", "4 3", "3.0 3.0", "2.0 2.0 1.0"]
+    width = 35
+    grid_height = 335/2.2
+    matrix_key = "11.7"
+    col_n = 2
+else:
+    default_var = ["","","",""]
+    input_dataframe = pd.DataFrame('', index=[str(i + 1) for i in range(10)], columns=[str(i + 1) for i in range(10)])
+    width = 15
+    matrix_key = "not"
     grid_height = 335
+    col_n = 1
+
+st.markdown("## Coefficient matrix A")
+# Standard
+st.markdown("Write your matrix in the top-left of this entry grid. The maximum size is 10 x 10.")
+st.write(
+    "Press enter or tab to confirm your edits.")
+col = st.beta_columns(2)
+with col[0]:
     response = AgGrid(
         input_dataframe,
         height=grid_height,
@@ -66,108 +79,91 @@ if not variable_dict["ex 11.7"]:
         sortable=False,
         filter=False,
         resizable=True,
-        defaultWidth=15,
+        defaultWidth=width,
         fit_columns_on_grid_load=False,
-        key='input_frame')
-    # Convert Matrix, catching errors. Errors lead to a stop that prints out the matrix and your matrix shape (m_s, n_s).
-    try:
-        messy_matrix = response['data'].replace("nan", "")
-        messy_matrix.replace(to_replace="", value=np.nan, inplace=True)
-        messy_matrix = messy_matrix.dropna(axis=1, how='all')
-        messy_matrix = messy_matrix.dropna(axis=0, how='all')
-        matrix_small = np.array(messy_matrix, dtype=float)
-        m_s = matrix_small.shape[0]
-        n_s = matrix_small.shape[1]
-        # If the matrix contains any NaNs, move to the except clause.
-        assert not np.isnan(matrix_small).any()
-    except:  # If any errors
-        st.write("Something is wrong with your matrix. ")
-        try:  # Try to give diagnostics
-            st.latex("A = " + sympy.latex(sympy.Matrix(matrix_small)))
-            st.write("It has shape (", m_s, "*", n_s, ")")
-        except:
-            pass
-        st.write(" Please ensure dimensions and entries are correct and submit again.")
-        st.stop()  # Nice exit of program, with no giant red errors.
-    if m_s > 0 and n_s > 0:
-        # Only get here if no errors. #Non-zero matrix, with no errors! Yay!
-        st.write("This is your matrix. It has shape (", m_s, "*", n_s, ") If this is incorrect, submit again.")
+        key=matrix_key)
+# Convert Matrix, catching errors. Errors lead to a stop that prints out the matrix and your matrix shape (m_s, n_s).
+try:
+    messy_matrix = response['data'].replace("nan", "")
+    messy_matrix.replace(to_replace="", value=np.nan, inplace=True)
+    messy_matrix = messy_matrix.dropna(axis=1, how='all')
+    messy_matrix = messy_matrix.dropna(axis=0, how='all')
+    matrix_small = np.array(messy_matrix, dtype=float)
+    m_s = matrix_small.shape[0]
+    n_s = matrix_small.shape[1]
+    # If the matrix contains any NaNs, move to the except clause.
+    assert not np.isnan(matrix_small).any()
+except:  # If any errors with conversion
+    st.write("Something is wrong with your matrix. ")
+    try:  # Try to give diagnostics
         st.latex("A = " + sympy.latex(sympy.Matrix(matrix_small)))
-        st.header("Input your problem data")
-        st.write("Enter vectors using spaces between entries, e.g.,\"1 4 3 2\".")
-        col = st.beta_columns(2)
-        # col_help = 0
-        with col[0]:
-            b = np.array([float(i) for i in
-                          st.text_input(f"Right-hand side b (a {m_s}-vector)", value="2 1").split(" ")])
-        if variable_dict["standard"]:
-            n_full = n_s + m_s
-        else:
-            n_full = n_s
-        with col[1]:
-            c = np.array([float(i) for i in
-                          st.text_input(f"Objective function coefficients c (a {n_full}-vector)", value="1 2").split(
-                              " ")])
-        st.header("Initial solution")
-        col = st.beta_columns(2)
-        with col[0]:
-            x = np.array([float(i) for i in
-                          st.text_input(f"x (a {n_full}-vector)", value="1 .5").split(" ")])
-        with col[1]:
-            y = np.array([float(i) for i in
-                          st.text_input(f"y (a {m_s}-vector)", value="2 .5").split(" ")])
-        st.header("Parameters")
-        col = st.beta_columns(2)
-        with col[0]:
-            st.write(r"""$\alpha$: Step size parameter.""")
-            alpha = st.number_input(r"""""", value=0.9, step=0.01, min_value=0.0, max_value=0.999,
-                                    help=r"""Ensures each variable is reduced by no more than a factor of $1 - \alpha$.""")
-            st.write("""$\gamma$: Duality gap parameter.""")
-            gamma = st.number_input(r"""""", value=0.25, step=0.01,
-                                    help=r"""The complimentary slackness parameter $\mu$ is multiplied by $\gamma$ each iteration such that $\mu \rightarrow 0$.""")
-        with col[1]:
-            st.write("""$\epsilon$: Optimality tolerance.""")
-            epsilon = st.number_input(r"""""", value=0.01, step=0.001, format="%f", min_value=0.00001,
-                                      help=r"""Stop the algorithm once **x**$^T$**w**$< \epsilon$.""")
-            st.write("""$\mu$: Initial complementary slackness parameter.""")
-            mu = st.number_input("", value=5.0, step=0.1)
-        variable_dict["done"] = st.checkbox("Are all your variables correct?")
-        # In this case, it's not var["ex 11.7"] so I could put "your data is:" but IDK about checkbox
-        ###TODO
-else:  # In this case, it's 11.7 data that we're loading.
-    variable_dict["done"] = True
-    variable_dict["standard"] = True
-    matrix_small = np.array([[1.5, 1], [1, 1], [0, 1]])
-    m_s = 3
-    n_s = 2
-    n_full = n_s + m_s
-    alpha = .9
-    epsilon = .01
-    gamma = .25
-    mu = 5.0
-    x = np.array([3, 3])  # , 8.5, 6, 7]
-    # w_i = [1.0, 2.0, 2.0, 2.0, 1.0]
-    b = np.array([16, 12, 10])
-    c = np.array([4, 3])
-    y = np.array([2.0, 2.0, 1.0])
-    st.header("Example 11.7 data is:")
+    except:
+        pass
+    st.write(" Please ensure dimensions and entries are correct and submit again.")
+    st.stop()  # Nice exit of program, with no giant red errors.
+if m_s > 0 and n_s > 0:
+    # Only get here if no errors. #Non-zero matrix, with no errors! Yay!
+    st.write("You entered")
+    col = st.beta_columns(2)
+    with col[0]:
+        st.latex("A = " + sympy.latex(sympy.Matrix(matrix_small)))
+    st.write("Enter vectors using spaces between entries, e.g.,\"1 4.1 3 2.0\".")
+    col = st.beta_columns(2)
+    # col_help = 0
+    with col[0]:
+        b = np.array([float(i) for i in
+                      st.text_input(f"Right-hand side b (a {m_s}-vector)", value=default_var[0]).split(" ") if i]) # 2 1
+    if variable_dict["standard"]:
+        n_full = n_s + m_s
+    else: #n_s is already big!
+        n_full = n_s
+    with col[1]:
+        c = np.array([float(i) for i in
+                      st.text_input(f"Objective function coefficients c (a {n_s}-vector)", value=default_var[1]).split(
+                          " ") if i]) #1 2 0 0
+    #st.header("Initial solution")
+    col = st.beta_columns(2)
+    with col[0]:
+        x = np.array([float(i) for i in
+                      st.text_input(f"x (a {n_s}-vector)", value=default_var[2]).split(" ") if i]) #1 0.5 0.5 1.5
+    with col[1]:
+        y = np.array([float(i) for i in
+                      st.text_input(f"y (a {m_s}-vector)", value=default_var[3]).split(" ") if i]) #2 0.5
+    st.header("Parameters")
+    col = st.beta_columns(2)
+    with col[0]:
+        st.write(r"""$\alpha$: Step size parameter.""")
+        alpha = st.number_input(r"""""", value=0.9, step=0.01, min_value=0.0, max_value=0.999,
+                                help=r"""Ensures each variable is reduced by no more than a factor of $1 - \alpha$. 0 < \alpha < 1""")
+        st.write("""$\gamma$: Duality gap parameter.""")
+        gamma = st.number_input(r"""""", value=0.25, step=0.01,
+                                help=r"""The complimentary slackness parameter $\mu$ is multiplied by $\gamma$ each iteration such that $\mu \rightarrow 0$. 0 < \gamma < 1""")
+    with col[1]:
+        st.write("""$\epsilon$: Optimality tolerance.""")
+        epsilon = st.number_input(r"""""", value=0.01, step=0.001, format="%f", min_value=0.00001,
+                                  help=r"""Stop the algorithm once **x**$^T$**w**$< \epsilon$. \epsilon > 0""")
+        st.write("""$\mu$: Initial complementary slackness parameter.""")
+        mu = st.number_input("", value=5.0, step=0.1, help = r"""\mu > 0""") #0.25
+    variable_dict["done"] = st.checkbox("Solve")
 
 
 def is_neg(x):
     return any([i <= 0 for i in x])
 
 
-if variable_dict["done"]:  # Or if ex 11.7
+if variable_dict["done"]:  #Once solve is pressed
     # Always run! Ex 11.7, standard, canonical, this is always run.
-    # By this point, crucially, are data has been marked as correct. We should still check this.
-    if not variable_dict["ex 11.7"]:
-        st.header("Your data is:")
-
+    # By this point, crucially, our data has been marked as correct. We should still check this.
+    st.header("The data is:")
     if variable_dict["standard"]:
-        s = b - matrix_small.dot(x)
-        matrix_full = np.concatenate((matrix_small, np.identity(m_s)), axis=1)
-        x_full = np.concatenate((x, s))
-        c_full = np.concatenate((c, np.zeros(m_s)))
+        try:
+            s = b - matrix_small.dot(x)
+            matrix_full = np.concatenate((matrix_small, np.identity(m_s)), axis=1)
+            x_full = np.concatenate((x, s))
+            c_full = np.concatenate((c, np.zeros(m_s)))
+        except:
+            st.write("The given vectors have incorrect dimensions.")
+            st.stop()
     else:
         matrix_full = matrix_small
         x_full = x
@@ -175,13 +171,18 @@ if variable_dict["done"]:  # Or if ex 11.7
             # matrix_full = np.concatenate((matrix_small, np.identity(m_s)), axis=1)
             # x_full = np.concatenate((x,s))
             # c_full = np.concatenate((c, np.zeros(m_s)))
-    w = matrix_full.T.dot(y) - c_full
+    try:
+        w = matrix_full.T.dot(y) - c_full
+    except:
+        st.write("The given vectors have incorrect dimensions.")
+        st.stop()
     #I don't know why this was so difficult! I'm saving these initial values for later.
     w_initial = list(w)
     x_initial = list(x_full)
     y_initial = list(y)
-    mu_initial = mu/2
-    st.latex("A = " + sympy.latex(sympy.Matrix(matrix_small)))
+    mu_initial = mu/2 #This is not an error, as mu_initial will be doubled later
+    if variable_dict["standard"]:
+        st.latex("A = " + sympy.latex(sympy.Matrix(matrix_full)))
     col = st.beta_columns(5)
     col_helper1 = 0
     var = [sympy.Matrix(i) for i in [b, c_full, w, x_full, y]]
@@ -190,15 +191,22 @@ if variable_dict["done"]:  # Or if ex 11.7
         with col[col_helper1 % 5]:
             st.latex(names[i] + "=" + sympy.latex(var[i]))
             col_helper1 += 1
-    if any([is_neg(x_full), is_neg(w)]):
-        st.write(f"One of your vectors is negative. Your vectors are x = {x_full}, w = {w}")
+    if is_neg(x_full):
+        st.markdown("Error: $x\leq0$.")
         st.stop()
-    f = x_full.dot(c_full)
-    variable_dict["update 11.26"] = st.checkbox("Use 11.26 to update mu?", value=False)
+    if is_neg(w):
+        st.markdown("Error: $w\leq0$.")
+        st.stop()
+    try:
+        f = x_full.dot(c_full)
+    except:
+        st.write("The given vectors have incorrect dimensions.")
+        st.stop()
+    variable_dict["update 11.26"] = st.checkbox("Use (11.26) to update mu?", value=False)
     if variable_dict["update 11.26"]:
-        st.markdown(f"Your method of computing $\mu$ is Equation 11.26.")
+        st.markdown(f"The method for computing $\mu$ is Equation (11.26).")
     else:
-        st.markdown("Your method of updating $\mu$ each iteration is $\mu^{new} = \gamma \mu$.")
+        st.markdown("The method for updating $\mu$ each iteration is $\mu^{new} = \gamma \mu$.")
     # if variable_dict["update 11.26"]:
     #    mu = gamma*np.dot(x,w)/len(x)
     # st.write("mu=",mu)
@@ -233,17 +241,17 @@ if variable_dict["done"]:  # All branches get here, once data has been verified.
         # IN CANONICAL FORM THERE IS NO S TO PRINT! We're already printing x_full.
         if variable_dict["standard"]:
             data.append(round_list([iter, mu, x_full.dot(w), f, x, s, y, w], make_tuple=True))
-            alist = ["Iteration", "mu", "Gap x^Tw", "Objective", "x", "s", "y", "w"]
+            alist = ["k", "mu", "Gap x^Tw", "Objective", "x", "s", "y", "w"]
         else:
             data.append(round_list([iter, mu, x_full.dot(w), f, x_full, y, w], make_tuple=True))
-            alist = ["Iteration", "mu", "Gap x^Tw", "Objective", "x", "y", "w"]
+            alist = ["k", "mu", "Gap x^Tw", "Objective", "x", "y", "w"]
     else:
         if variable_dict["standard"]:  # Not Advanced, and Standard
             data.append(round_list([iter, mu, x_full.dot(w), f, x], make_tuple=True))
-            alist = ["Iteration", "mu", "Gap x^Tw", "Objective", "x"]
+            alist = ["k", "mu", "Gap x^Tw", "Objective", "x"]
         else:  # Not advanced, canonical
             data.append(round_list([iter, mu, x_full.dot(w), f, x_full], make_tuple=True))
-            alist = ["Iteration", "mu", "Gap x^Tw", "Objective", "x"]
+            alist = ["k", "mu", "Gap x^Tw", "Objective", "x"]
 
     while not np.dot(x_full, w) < epsilon:
         diagx = np.diagflat(x_full)
@@ -260,7 +268,7 @@ if variable_dict["done"]:  # All branches get here, once data has been verified.
         y += betad * dy
         w += betad * dw
         if variable_dict["update 11.26"]:
-            mu = gamma * x.dot(w) / (m_s + n_s)
+            mu = gamma * x_full.dot(w) / (m_s + n_s)
         else:
             mu *= gamma
 
@@ -291,8 +299,9 @@ if variable_dict["done"]:  # All branches get here, once data has been verified.
     """, unsafe_allow_html=True)
     # st.dataframe(df)
     st.table(df)
-    st.markdown("Note: The $\mu$ used in each row was used to compute that row."
-                " This differs slightly from table 11.2 as here, $\mu$ is reported after it is updated.")
+    #st.markdown("Note: Unlike table 11.2, in this table, the $\mu$ used in each row was used to compute that row")
+    #st.markdown("Note: Unlike table 11.2, the $\mu$ used on each row of this table was used to compute that row.")
+    st.markdown("Note: In this table each row is used to compute the next row, which differs from table 11.2 which places each $\mu$ on the row it computes.")
     col_help = 0
 
 
@@ -422,8 +431,7 @@ if variable_dict["done"]:
                                   diagx.dot(diagwinv).round(4),
                                   mu * np.ones(n_full), diagx.dot(diagw).dot(np.ones(n_full)), vmu,
                                   matrix_full, complicated_eq, dx, dy, dw], False)
-
-        st.write(f"Iteration {iter}")
+        st.markdown("### $k= "+str(iter) + "$")
         col = st.beta_columns(3)
         for i in range(len(matrix_string)):
             # col_help += 1
@@ -493,6 +501,3 @@ if variable_dict["done"]:
         iter += 1
         st.write("""---""")
         assert iter <= len(df), "Too many iterations"
-st.markdown('''
-#### Coded by [Abraham Holleran](https://github.com/Stonepaw90) :sunglasses:
-''')
